@@ -1,0 +1,33 @@
+﻿@model TiendaApp.Models.Articulo
+
+@{
+    ViewData["Title"] = "Eliminar Artículo";
+}
+
+<div class="container mt-5">
+    <div class="card border-danger" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-danger text-white">
+            <h4> ¿Estás seguro de eliminar esto?</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title text-center mb-4">@Model.Descripcion</h5>
+            
+            <dl class="row">
+                <dt class="col-sm-4">Precio:</dt>
+                <dd class="col-sm-8">$ @Model.Precio</dd>
+
+                <dt class="col-sm-4">Stock:</dt>
+                <dd class="col-sm-8">@Model.Stock</dd>
+
+                <dt class="col-sm-4">ID:</dt>
+                <dd class="col-sm-8">@Model.Id</dd>
+            </dl>
+
+            <form asp-action="Delete" class="text-center mt-4">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger btn-lg">Eliminar</button>
+                <a asp-action="Index" class="btn btn-secondary btn-lg">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>

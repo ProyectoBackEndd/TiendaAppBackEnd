@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TiendaApp.Models;       // Donde está tu clase Articulo
-using TiendaApp.Repositories; // Donde está tu IArticuloRepository
+using TiendaApp.Models;
+using TiendaApp.Repositories;
 
 namespace TiendaAppBackEnd.Controllers
 {
@@ -8,14 +8,13 @@ namespace TiendaAppBackEnd.Controllers
     {
         private readonly IArticuloRepository _repository;
 
-        // Constructor: Aquí pedimos el Repositorio al sistema (Inyección de Dependencias)
+        // Constructor
         public ArticulosController(IArticuloRepository repository)
         {
             _repository = repository;
         }
 
-        // 1. PÁGINA PRINCIPAL: Muestra la lista de artículos
-        // GET: /Articulos
+        // 1. PÁGINA PRINCIPAL (Index)
         public async Task<IActionResult> Index()
         {
             // Usamos el repositorio para buscar los datos en la BD
@@ -23,15 +22,13 @@ namespace TiendaAppBackEnd.Controllers
             return View(articulos);
         }
 
-        // 2. FORMULARIO: Muestra la pantalla para crear uno nuevo
-        // GET: /Articulos/Create
+        // 2. CREAR (GET) Muestra la pantalla para crear uno nuevo
         public IActionResult Create()
         {
             return View();
         }
 
-        // 3. GUARDAR: Recibe los datos del formulario y los manda a la BD
-        // POST: /Articulos/Create
+        // 3. CREAR (POST) Recibe los datos del formulario y los manda a la BD
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Articulo articulo)
@@ -42,8 +39,70 @@ namespace TiendaAppBackEnd.Controllers
                 // Si sale bien, volvemos a la lista
                 return RedirectToAction(nameof(Index));
             }
-            // Si hay error (ej. precio negativo), mostramos el formulario de nuevo
+            // Si hay error, mostramos el formulario de nuevo
             return View(articulo);
+        }
+
+       
+        // 4. EDITAR (GET) Busca el artículo y muestra el formulario con los datos cargados
+        public async Task<IActionResult> Edit(int id)
+        {
+            if (id == 0) return NotFound();
+
+            var articulo = await _repository.GetByIdAsync(id);
+            if (articulo == null)
+            {
+                return NotFound();
+            }
+            return View(articulo);
+        }
+
+        // 5. EDITAR (POST) Recibe los cambios y actualiza la BD
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Articulo articulo)
+        {
+            if (id != articulo.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    await _repository.UpdateAsync(articulo);
+                }
+                catch
+                {
+                    // Si ocurre un error al guardar (opcional: manejar concurrencia)
+                    return NotFound();
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(articulo);
+        }
+
+        // 6. ELIMINAR (GET) Muestra la pantalla de confirmación 
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id == 0) return NotFound();
+
+            var articulo = await _repository.GetByIdAsync(id);
+            if (articulo == null)
+            {
+                return NotFound();
+            }
+            return View(articulo);
+        }
+
+        // 7. ELIMINAR (POST) Ejecuta el borrado real cuando el usuario confirma
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            await _repository.DeleteAsync(id);
+            return RedirectToAction(nameof(Index));
         }
     }
 }
