@@ -1,0 +1,36 @@
+﻿@model IEnumerable<TiendaApp.Models.Articulo>
+
+@{
+    ViewData["Title"] = "Listado de Artículos";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2> Mis Artículos</h2>
+        <a asp-action="Create" class="btn btn-success">
+            + Nuevo Artículo
+        </a>
+    </div>
+
+    <table class="table table-hover table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Fecha Alta</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Descripcion</td>
+                    <td>$ @item.Precio</td>
+                    <td>@item.FechaAlta.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
