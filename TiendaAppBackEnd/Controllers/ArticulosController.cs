@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TiendaApp.Models;
 using TiendaApp.Repositories;
+using TiendaApp.DTOs; // ¡Importante!
 
 namespace TiendaAppBackEnd.Controllers
 {
@@ -8,43 +9,48 @@ namespace TiendaAppBackEnd.Controllers
     {
         private readonly IArticuloRepository _repository;
 
-        // Constructor
         public ArticulosController(IArticuloRepository repository)
         {
             _repository = repository;
         }
 
-        // 1. PÁGINA PRINCIPAL (Index)
+        // 1. INDEX: Aquí podemos seguir usando la entidad o mapear a una lista de DTOs.
+        // Para este TP, está bien dejarlo así o hacer un mapeo rápido si quieres ser purista.
         public async Task<IActionResult> Index()
         {
-            // Usamos el repositorio para buscar los datos en la BD
             var articulos = await _repository.GetAllAsync();
             return View(articulos);
         }
 
-        // 2. CREAR (GET) Muestra la pantalla para crear uno nuevo
+        // 2. CREAR (GET): Enviamos un DTO vacío a la vista
         public IActionResult Create()
         {
-            return View();
+            return View(new ArticuloDTO());
         }
 
-        // 3. CREAR (POST) Recibe los datos del formulario y los manda a la BD
+        // 3. CREAR (POST): Recibimos un ArticuloDTO
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Articulo articulo)
+        public async Task<IActionResult> Create(ArticuloDTO articuloDto)
         {
             if (ModelState.IsValid)
             {
+                // MAPEO MANUAL: DTO -> Entidad
+                var articulo = new Articulo
+                {
+                    Descripcion = articuloDto.Descripcion,
+                    Precio = articuloDto.Precio,
+                    Stock = articuloDto.Stock,
+                    // FechaAlta se genera sola en la clase Articulo al hacer 'new'
+                };
+
                 await _repository.AddAsync(articulo);
-                // Si sale bien, volvemos a la lista
                 return RedirectToAction(nameof(Index));
             }
-            // Si hay error, mostramos el formulario de nuevo
-            return View(articulo);
+            return View(articuloDto);
         }
 
-       
-        // 4. EDITAR (GET) Busca el artículo y muestra el formulario con los datos cargados
+        // 4. EDITAR (GET): Buscamos la Entidad y la convertimos a DTO para la vista
         public async Task<IActionResult> Edit(int id)
         {
             if (id == 0) return NotFound();
@@ -54,15 +60,26 @@ namespace TiendaAppBackEnd.Controllers
             {
                 return NotFound();
             }
-            return View(articulo);
+
+            // MAPEO MANUAL: Entidad -> DTO
+            var articuloDto = new ArticuloDTO
+            {
+                Id = articulo.Id,
+                Descripcion = articulo.Descripcion,
+                Precio = articulo.Precio,
+                Stock = articulo.Stock,
+                FechaAlta = articulo.FechaAlta
+            };
+
+            return View(articuloDto);
         }
 
-        // 5. EDITAR (POST) Recibe los cambios y actualiza la BD
+        // 5. EDITAR (POST): Recibimos DTO, lo convertimos a Entidad y guardamos
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Articulo articulo)
+        public async Task<IActionResult> Edit(int id, ArticuloDTO articuloDto)
         {
-            if (id != articulo.Id)
+            if (id != articuloDto.Id)
             {
                 return NotFound();
             }
@@ -71,32 +88,38 @@ namespace TiendaAppBackEnd.Controllers
             {
                 try
                 {
+                    // MAPEO MANUAL: DTO -> Entidad
+                    // Nota: Aquí creamos una instancia con los datos del DTO
+                    var articulo = new Articulo
+                    {
+                        Id = articuloDto.Id.Value, // Como en el DTO el Id es nullable (int?), usamos .Value
+                        Descripcion = articuloDto.Descripcion,
+                        Precio = articuloDto.Precio,
+                        Stock = articuloDto.Stock,
+                        FechaAlta = articuloDto.FechaAlta
+                    };
+
                     await _repository.UpdateAsync(articulo);
                 }
                 catch
                 {
-                    // Si ocurre un error al guardar (opcional: manejar concurrencia)
                     return NotFound();
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(articulo);
+            return View(articuloDto);
         }
 
-        // 6. ELIMINAR (GET) Muestra la pantalla de confirmación 
+        // ELIMINAR: Puede quedar igual o usar DTO para mostrar la confirmación.
+        // Por simplicidad, lo dejaremos igual ya que solo muestra datos.
         public async Task<IActionResult> Delete(int id)
         {
             if (id == 0) return NotFound();
-
             var articulo = await _repository.GetByIdAsync(id);
-            if (articulo == null)
-            {
-                return NotFound();
-            }
+            if (articulo == null) return NotFound();
             return View(articulo);
         }
 
-        // 7. ELIMINAR (POST) Ejecuta el borrado real cuando el usuario confirma
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
